@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Notulen — Generator & Transkripsi Notulen Rapat Resmi</title>
+
+<!-- External PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+/* CSS Design Tokens & Reset */
+:root {
+  --b: #3857f4;
+  --b-hover: #2745d8;
+  --p: #7954f6;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --bg-page: #f8fafc;
+  --bg-panel: #ffffff;
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0 20px 45px rgba(56,87,244,0.12);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg-page);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; cursor: pointer; }
+
+/* Sticky Top Navigation Bar */
+.top {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 clamp(20px, 6vw, 90px);
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  z-index: 100;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+}
+.logo { display: flex; align-items: center; gap: 3px; }
+.logo i { display: block; width: 4.5px; border-radius: 4px; background: linear-gradient(180deg, #8b65ff, #3155f5); }
+.logo i:nth-child(1), .logo i:nth-child(5) { height: 12px; }
+.logo i:nth-child(2), .logo i:nth-child(4) { height: 22px; }
+.logo i:nth-child(3) { height: 32px; }
+
+.nav {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+  height: 100%;
+  align-items: center;
+}
+.nav a {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  transition: color 0.15s;
+}
+.nav a:hover { color: var(--b); }
+.nav a.active { color: var(--b); }
+.nav a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 14px;
+  left: 0; right: 0;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--b);
+}
+
+.actions { display: flex; gap: 10px; align-items: center; }
+.iconbtn, .outline, .solid {
+  border-radius: 12px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+}
+.iconbtn { border: 1px solid var(--line); background: #ffffff; color: #475569; font-size: 15px; padding: 9px 12px; }
+.iconbtn:hover { background: #f1f5f9; }
+.outline { border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; }
+.outline:hover { border-color: var(--b); color: var(--b); transform: translateY(-1px); }
+.solid { border: 1px solid var(--b); background: linear-gradient(135deg, #3d5df6, #304ce7); color: #ffffff; box-shadow: 0 6px 16px rgba(56, 87, 244, 0.25); }
+.solid:hover { transform: translateY(-1.5px); box-shadow: 0 10px 22px rgba(56, 87, 244, 0.35); }
+
+main { min-height: calc(100vh - 76px); }
+
+/* Landing Page Hero Section */
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 40px;
+  align-items: center;
+  padding: 60px clamp(20px, 6vw, 90px) 50px;
+  min-height: 560px;
+  background: radial-gradient(ellipse at 70% 30%, rgba(212, 206, 255, 0.45), transparent 50%),
+              radial-gradient(ellipse at 95% 80%, rgba(191, 241, 255, 0.5), transparent 40%),
+              linear-gradient(115deg, #f8fafc, #f1f5f9 60%, #eff6ff);
+  overflow: hidden;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 99px;
+  padding: 7px 15px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+.eyebrow svg { width: 15px; height: 15px; }
+h1 {
+  font-size: clamp(38px, 3.6vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -1.8px;
+  margin: 0 0 18px;
+  font-weight: 850;
+  color: #0f172a;
+}
+.gradient {
+  background: linear-gradient(90deg, #3557f4, #7952f5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-copy p { color: #475569; font-size: 16.5px; line-height: 1.65; max-width: 560px; margin: 0 0 32px; }
+.buttons { display: flex; gap: 14px; flex-wrap: wrap; }
+.cta {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  padding: 0 26px;
+  font-weight: 750;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+}
+.cta:hover { transform: translateY(-2px); }
+.cta.primary { background: linear-gradient(110deg, #3d5df6, #2844e3); border: 1px solid #3857f4; color: #ffffff; box-shadow: 0 10px 22px rgba(56, 87, 244, 0.3); }
+.cta.secondary { background: rgba(255, 255, 255, 0.85); color: #1e293b; border: 1px solid #cbd5e1; }
+.cta svg { width: 18px; height: 18px; }
+
+/* Hero Sheet Visual Mockup */
+.art { min-height: 410px; display: grid; place-items: center; position: relative; }
+.glow { position: absolute; width: 380px; height: 380px; border-radius: 50%; background: linear-gradient(145deg, rgba(229, 228, 255, 0.7), rgba(214, 248, 255, 0.6)); }
+.sheet {
+  position: relative;
+  width: min(100%, 430px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 24px 26px;
+  box-shadow: 0 25px 60px rgba(30, 41, 59, 0.12);
+  transform: rotate(1deg);
+}
+.sheethead { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px; margin-bottom: 16px; font-size: 11px; font-weight: 850; }
+.minilogo { display: flex; align-items: center; gap: 7px; color: #0f172a; }
+.minilogo .logo i { width: 3px; }
+.minilogo .logo i:nth-child(1), .minilogo .logo i:nth-child(5) { height: 8px; }
+.minilogo .logo i:nth-child(2), .minilogo .logo i:nth-child(4) { height: 14px; }
+.minilogo .logo i:nth-child(3) { height: 20px; }
+.chip { font-size: 9.5px; color: #2563eb; background: #eff6ff; border-radius: 6px; padding: 4px 8px; font-weight: 750; }
+.doctitle { font-size: 19px; font-weight: 850; margin-bottom: 4px; color: #0f172a; }
+.meta { font-size: 10.5px; color: #64748b; margin-bottom: 16px; }
+.docrow { display: grid; grid-template-columns: 28px 1fr; gap: 10px; margin: 14px 0; }
+.docicon { height: 28px; width: 28px; border-radius: 50%; display: grid; place-items: center; background: #eff6ff; color: #2563eb; }
+.docicon svg { width: 15px; height: 15px; }
+.docrow h4 { font-size: 11.5px; margin: 0 0 3px; color: #1e293b; font-weight: 800; }
+.docrow p { font-size: 10.5px; line-height: 1.5; color: #475569; margin: 0; }
+.task { display: flex; gap: 7px; margin: 6px 0; color: #475569; font-size: 10.5px; align-items: center; }
+.check { width: 12px; height: 12px; border: 1.5px solid #94a3b8; border-radius: 3px; flex: none; display: grid; place-items: center; }
+.check::after { content: "✓"; font-size: 9px; color: #2563eb; font-weight: 900; }
+.sheetfoot { display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; margin-top: 16px; padding-top: 12px; color: #64748b; font-size: 9.5px; font-weight: 650; }
+.floatnote { position: absolute; right: -5px; top: 40px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); font-size: 11px; font-weight: 750; transform: rotate(4deg); }
+.floatnote span { color: var(--b); }
+.audio { position: absolute; left: -5px; bottom: 15px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+.play { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #5b42ef); display: grid; place-items: center; color: white; }
+.play svg { width: 13px; height: 13px; }
+.wave { height: 24px; display: flex; align-items: center; gap: 3px; }
+.wave i { width: 3px; border-radius: 3px; background: linear-gradient(180deg, #9c7bff, #4f5ff5); }
+.wave i:nth-child(3n+1) { height: 8px; }
+.wave i:nth-child(3n+2) { height: 20px; }
+.wave i:nth-child(3n) { height: 13px; }
+
+/* Features Grid Section */
+.features { padding: 50px clamp(20px, 6vw, 90px) 60px; text-align: center; background: #ffffff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.sectiontitle { font-size: 30px; letter-spacing: -1px; margin: 0 0 8px; font-weight: 850; color: #0f172a; }
+.subtitle { color: var(--muted); margin: 0 auto 38px; font-size: 15px; max-width: 620px; }
+.featuregrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; text-align: left; }
+.fcard { display: block; background: var(--bg-page); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; transition: all 0.2s; }
+.fcard:hover, .fdetail:hover { border-color: #cbd5e1; transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+.ficon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px; }
+.ficon svg { width: 24px; height: 24px; }
+.purple { color: #7c3aed; background: #f3e8ff; }
+.blue { color: #2563eb; background: #eff6ff; }
+.green { color: #0d9488; background: #ccfbf1; }
+.orange { color: #ea580c; background: #ffedd5; }
+.fcard h3, .fdetail h3 { margin: 0 0 8px; font-size: 15px; font-weight: 850; color: #0f172a; }
+.fcard p, .fdetail p { margin: 0; font-size: 13px; color: #475569; line-height: 1.6; }
+.learn { display: inline-block; color: var(--b); font-weight: 750; font-size: 12.5px; margin-top: 12px; }
+
+/* Subpages Container */
+.page { padding: 40px clamp(20px, 6vw, 90px) 60px; min-height: calc(100vh - 76px); background: linear-gradient(135deg, #f8fafc, #f1f5f9 65%, #edf4ff); }
+.pagehead { text-align: center; max-width: 740px; margin: 0 auto 35px; }
+.pagehead .eyebrow { margin-bottom: 12px; }
+.pagehead h1 { font-size: clamp(30px, 3.8vw, 44px); letter-spacing: -1.2px; margin-bottom: 10px; }
+.pagehead p { color: var(--muted); font-size: 15px; line-height: 1.65; margin: 0; }
+
+.steps, .featurepage { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1100px; margin: auto; }
+.step, .fdetail, .panel { background: #ffffff; border: 1px solid var(--line); border-radius: 18px; padding: 24px; box-shadow: var(--shadow-sm); }
+.num { width: 34px; height: 34px; border-radius: 10px; background: #eff6ff; color: #2563eb; font-weight: 850; display: grid; place-items: center; margin-bottom: 14px; font-size: 13px; }
+.visual { height: 160px; border-radius: 14px; background: linear-gradient(135deg, #f1f5f9, #eff6ff); display: grid; place-items: center; margin-bottom: 16px; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+.vcard { width: 84%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+.vmic { width: 38px; height: 38px; display: grid; place-items: center; background: #eff6ff; border-radius: 50%; color: #2563eb; margin: 0 auto 6px; }
+.vmic svg { width: 20px; height: 20px; }
+.vline { height: 5px; background: #e2e8f0; border-radius: 8px; margin: 5px auto; width: 80%; }
+.vline.short { width: 50%; }
+.step small, .fdetail small { font-size: 10px; color: #2563eb; font-weight: 850; letter-spacing: 0.5px; }
+.step h3 { font-size: 16px; margin: 6px 0 6px; color: #0f172a; }
+.step p { font-size: 13px; line-height: 1.6; color: #475569; margin: 0; }
+.featurepage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fdetail { display: flex; flex-direction: column; align-items: flex-start; }
+.fdetail .ficon { margin-bottom: 14px; }
+.fdetail p { flex: 1; margin-bottom: 12px; }
+
+/* Editor & Workspace 2-Column Grid Layout */
+.panelgrid { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 24px; max-width: 1260px; margin: auto; align-items: start; }
+.panel h2 { font-size: 19px; margin: 0 0 4px; display: flex; align-items: center; justify-content: space-between; color: #0f172a; }
+.muted { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 16px; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.field { display: block; margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 750; margin-bottom: 5px; color: #334155; }
+.field input, .field textarea, .field select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #0f172a;
+  background: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--b);
+  box-shadow: 0 0 0 3px rgba(56, 87, 244, 0.15);
+}
+.field small { display: block; color: #64748b; font-size: 11px; line-height: 1.4; margin-top: 5px; }
+
+.drop {
+  border: 2px dashed #93c5fd;
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  background: #f8fafc;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+.drop:hover, .drop.dragover { border-color: var(--b); background: #eff6ff; }
+.drop svg { width: 28px; height: 28px; color: var(--b); margin-bottom: 4px; }
+.drop p { font-size: 13px; color: #1e293b; margin: 2px 0; font-weight: 700; }
+.drop small { color: #64748b; font-size: 11px; display: block; }
+.drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.file-status {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+.file-status span { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remove-file { background: none; border: none; color: #ef4444; font-size: 16px; font-weight: 800; padding: 2px 6px; cursor: pointer; }
+
+.sample-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #334155;
+}
+.sample-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: var(--b);
+  padding: 5px 11px;
+  border-radius: 7px;
+  font-weight: 750;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.sample-btn:hover { background: var(--b); color: #ffffff; border-color: var(--b); }
+
+.keyword { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin: 4px 0 16px; }
+.keyword label { color: #1e293b; }
+.wide {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  padding: 13px;
+  color: #ffffff;
+  background: linear-gradient(110deg, #3d5df6, #2542e2);
+  font-weight: 800;
+  font-size: 13.5px;
+  box-shadow: 0 8px 20px rgba(56, 87, 244, 0.25);
+  transition: all 0.2s;
+}
+.wide:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(56, 87, 244, 0.35); }
+
+/* Document Preview Wrap & Formal Minutes Paper */
+.doc-preview-wrap {
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 18px;
+  max-height: 780px;
+  overflow-y: auto;
+}
+.empty { text-align: center; padding: 60px 20px; background: #ffffff; border-radius: 10px; border: 1px dashed #cbd5e1; }
+.empty .ficon { margin: 0 auto 12px; }
+.empty strong { display: block; color: #1e293b; margin-bottom: 6px; font-size: 15px; }
+.empty p { margin: 0; color: #64748b; font-size: 13px; }
+
+/* Formal Minutes Document Paper (A4 Styled Layout) */
+#notulen-paper {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 38px 42px;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  font-family: 'Segoe UI', Inter, Arial, sans-serif;
+  line-height: 1.55;
+  font-size: 12.5px;
+  outline: none;
+}
+.doc-header { border-bottom: 2.5px solid #1e3a8a; padding-bottom: 14px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-start; }
+.doc-org { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--b); margin-bottom: 3px; }
+.doc-main-title { font-size: 21px; font-weight: 850; color: #0f172a; margin: 0; letter-spacing: -0.4px; }
+.doc-badge { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 9.5px; font-weight: 800; padding: 4px 9px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.meta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+.meta-table td { padding: 6px 10px; border: 1px solid #cbd5e1; vertical-align: top; }
+.meta-label { width: 22%; background: #f8fafc; font-weight: 700; color: #334155; }
+.meta-val { width: 28%; color: #0f172a; }
+
+.sec-block { margin-bottom: 18px; page-break-inside: avoid; }
+.sec-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+.sec-body { color: #1e293b; text-align: justify; }
+.sec-list { margin: 0; padding-left: 18px; }
+.sec-list li { margin-bottom: 6px; padding-left: 2px; }
+
+.action-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 6px; }
+.action-table th { background: #1e3a8a; color: #ffffff; font-weight: 700; text-align: left; padding: 7px 9px; border: 1px solid #1e3a8a; }
+.action-table td { padding: 7px 9px; border: 1px solid #cbd5e1; vertical-align: top; color: #1e293b; }
+.action-table tr:nth-child(even) td { background: #f8fafc; }
+.status-pill { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #fef3c7; color: #92400e; }
+
+.doc-footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between; font-size: 11px; color: #64748b; page-break-inside: avoid; }
+.sign-box { text-align: center; width: 190px; }
+.sign-line { margin-top: 45px; border-top: 1px solid #334155; padding-top: 4px; font-weight: 700; color: #0f172a; }
+
+.resultbuttons { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+.resultbuttons button { border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 8px; background: #ffffff; color: #1e293b; font-size: 12px; font-weight: 750; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
+.resultbuttons button:hover { background: #f1f5f9; border-color: #94a3b8; }
+.resultbuttons button.btn-pdf { background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; border-color: #be123c; box-shadow: 0 4px 14px rgba(225,29,72,0.22); }
+.resultbuttons button.btn-pdf:hover { background: linear-gradient(135deg, #be123c, #9f1239); transform: translateY(-1px); }
+
+/* Toast Notification Floating Alert */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translate(-50%, 20px);
+  opacity: 0; pointer-events: none;
+  background: #0f172a; color: #ffffff;
+  padding: 11px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 600;
+  transition: all 0.25s ease;
+  z-index: 1000; max-width: 90%;
+  text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Dark Theme Support */
+body.dark { background: #0f172a; color: #f8fafc; --bg-page: #0f172a; --bg-panel: #1e293b; --line: #334155; --muted: #94a3b8; }
+body.dark .top { background: rgba(15, 23, 42, 0.92); border-color: #334155; }
+body.dark .brand { color: #f8fafc; }
+body.dark .nav a { color: #cbd5e1; }
+body.dark .nav a.active { color: #818cf8; }
+body.dark .nav a.active::after { background: #818cf8; }
+body.dark .hero, body.dark .page { background: radial-gradient(ellipse at 70% 30%, rgba(30, 41, 59, 0.9), transparent 60%), linear-gradient(115deg, #0f172a, #1e293b); }
+body.dark .hero-copy p, body.dark .fcard p, body.dark .fdetail p, body.dark .subtitle, body.dark .pagehead p { color: #94a3b8; }
+body.dark .features { background: #0f172a; border-color: #334155; }
+body.dark .fcard, body.dark .step, body.dark .fdetail, body.dark .panel { background: #1e293b; border-color: #334155; }
+body.dark h1, body.dark h2, body.dark h3, body.dark .sectiontitle { color: #f8fafc; }
+body.dark .field label { color: #e2e8f0; }
+body.dark .field input, body.dark .field textarea, body.dark .field select { background: #0f172a; color: #f8fafc; border-color: #334155; }
+body.dark .keyword { background: #0f172a; border-color: #334155; }
+body.dark .sample-bar { background: #0f172a; border-color: #334155; color: #94a3b8; }
+body.dark .sample-btn { background: #1e293b; border-color: #475569; color: #818cf8; }
+body.dark .outline, body.dark .iconbtn { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+body.dark .drop { background: #0f172a; border-color: #334155; }
+body.dark .drop p { color: #e2e8f0; }
+body.dark .file-status { background: #1e293b; border-color: #3b82f6; color: #93c5fd; }
+body.dark .doc-preview-wrap { background: #0b0f19; border-color: #1e293b; }
+body.dark .empty { background: #1e293b; border-color: #334155; }
+body.dark .resultbuttons button:not(.btn-pdf) { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+
+/* Responsive Adjustments */
+@media(max-width:1050px) {
+  .top { padding-inline: 20px; gap: 16px; }
+  .hero { padding-inline: 30px; gap: 24px; }
+  .featuregrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .panelgrid { grid-template-columns: 1fr; }
+  h1 { font-size: 40px; }
+}
+@media(max-width:800px) {
+  .top { height: auto; min-height: 70px; padding: 12px 18px; flex-wrap: wrap; }
+  .nav { order: 3; width: 100%; height: 36px; justify-content: space-between; gap: 6px; }
+  .nav a { font-size: 11.5px; }
+  .nav a.active::after { bottom: 0; }
+  .actions { margin-left: auto; }
+  .hero { display: flex; flex-direction: column; padding: 36px 20px; }
+  .art { width: 100%; min-height: 380px; }
+  .features { padding: 36px 20px; }
+  .steps { grid-template-columns: 1fr; }
+  .featurepage { grid-template-columns: 1fr; }
+  .page { padding: 30px 18px; }
+  .row2, .row3 { grid-template-columns: 1fr; }
+  .resultbuttons { grid-template-columns: 1fr 1fr; }
+}
+@media(max-width:520px) {
+  .brand { font-size: 16px; }
+  .actions { gap: 4px; }
+  .outline, .solid { padding: 7px 10px; font-size: 11px; }
+  h1 { font-size: 34px; letter-spacing: -1.2px; }
+  .sheet { padding: 16px; }
+  #notulen-paper { padding: 22px 18px; }
+  .resultbuttons { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header Navigation Bar -->
+<header class="top">
+  <a class="brand" href="#beranda" data-route="beranda">
+    <span class="logo"><i></i><i></i><i></i><i></i><i></i></span>
+    <span>AI Notulen</span>
+  </a>
+  <nav class="nav">
+    <a href="#beranda" data-route="beranda" class="active">Beranda</a>
+    <a href="#fitur" data-route="fitur">Fitur</a>
+    <a href="#cara-kerja" data-route="cara-kerja">Cara Kerja</a>
+    <a href="#riwayat" data-route="riwayat">
+      Riwayat 
+      <span id="nav-count" style="margin-left:5px;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:99px;font-size:10px;display:none">0</span>
+    </a>
+  </nav>
+  <div class="actions">
+    <button class="iconbtn" id="theme-btn" title="Ganti Mode Tampilan" aria-label="Ganti Tema">☼</button>
+    <a class="solid" href="#buat-notulen" data-route="buat-notulen">+ Buat Notulen</a>
+  </div>
+</header>
+
+<!-- Dynamic Main View Container -->
+<main id="app"></main>
+
+<!-- Global Toast Notification -->
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// Icon SVG definitions
+const I = {
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 2 2 7 7 3-7 2-2 7-2-7-7-2 7-3z"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 16.5A4.5 4.5 0 0 0 18 8h-1.2A6 6 0 1 0 5 16.5Z"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z" fill="currentColor"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg>',
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="15" height="16" rx="2"/><path d="m17 9 5-3v12l-5-3"/></svg>',
+  pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+};
+
+// Features catalog data
+const features = [
+  { key: 'transkripsi', title: 'Unggah Rekaman & Teks', desc: 'Seret file MP4, MP3, WAV, atau dokumen transkrip .txt langsung ke area kerja.', icon: 'video', color: 'purple', tag: 'MULTI-FORMAT', details: 'Dukung format MP4, MP3, WAV, M4A, WEBM serta file transkrip (.txt). File .txt otomatis terbaca secara instan.' },
+  { key: 'ai-summary', title: 'Ekstraksi Poin & Keputusan', desc: 'Menganalisis kalimat percakapan untuk memilah ringkasan, keputusan rapat, dan tugas PIC.', icon: 'spark', color: 'blue', tag: 'EKSTRAKSI CERDAS', details: 'Sistem otomatis mengenali frasa kunci seperti disepakati, diputuskan, penanggung jawab (PIC), dan batas waktu.' },
+  { key: 'notulen-lengkap', title: 'Format Resmi & Live Edit', desc: 'Hasil berupa lembar notulensi standar A4 lengkap dengan kolom pengesahan tanda tangan.', icon: 'doc', color: 'green', tag: 'DOKUMEN RESMI', details: 'Teks pratinjau dapat langsung diklik dan diedit sebelum diunduh agar sempurna sesuai kebutuhan.' },
+  { key: 'riwayat', title: 'Unduh PDF & Simpan Riwayat', desc: 'Sekali klik untuk mengunduh dokumen PDF A4 rapi serta menyimpan riwayat di browser.', icon: 'cloud', color: 'orange', tag: 'EKSPOR PDF INSTAN', details: 'Menghasilkan file PDF dengan tata letak konsisten, tidak berantakan, serta dapat diakses kembali.' }
+];
+
+const app = document.querySelector('#app');
+let currentNotulen = null;
+let selectedFile = null;
+let saved = JSON.parse(localStorage.getItem('ai_notulen_history') || '[]');
+
+// Helper to escape HTML characters
+function esc(str) {
+  return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Update saved badge count in top navbar
+function updateNavBadge() {
+  const badge = document.getElementById('nav-count');
+  if (!badge) return;
+  if (saved.length > 0) {
+    badge.textContent = saved.length;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Helper to generate icon HTML
+function fi(f) { return `<div class="ficon ${f.color}">${I[f.icon]}</div>`; }
+
+// Page Component: Beranda (Home)
+function homeView() {
+  return `
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">${I.spark} AI Notulen Generator</div>
+      <h1>Ubah Rekaman Rapat<br>Menjadi Notulen Resmi<br><span class="gradient">Siap Unduh PDF</span></h1>
+      <p>AI Notulen membantu Anda mengolah rekaman audio/video atau catatan transkrip menjadi dokumen notulensi terstruktur, lengkap dengan tabel tindak lanjut dan pengesahan.</p>
+      <div class="buttons">
+        <a class="cta primary" href="#buat-notulen" data-route="buat-notulen">${I.mic} Buat Notulen Sekarang</a>
+        <a class="cta secondary" href="#cara-kerja" data-route="cara-kerja">${I.play} Lihat Cara Kerja</a>
+      </div>
+    </div>
+    <div class="art">
+      <div class="glow"></div>
+      <article class="sheet">
+        <div class="sheethead">
+          <span class="minilogo"><span class="logo"><i></i><i></i><i></i><i></i><i></i></span> AI Notulen</span>
+          <span class="chip">✦ FORMAT PDF RESMI</span>
+        </div>
+        <div class="doctitle">Notulen Rapat Koordinasi</div>
+        <div class="meta">PT Nusantara Digital · Senin, 24 November 2026</div>
+        <div class="docrow">
+          <div class="docicon">${I.spark}</div>
+          <div><h4>Ringkasan Eksekutif</h4><p>Membahas evaluasi kinerja peluncuran produk dan alokasi anggaran promosi Q4.</p></div>
+        </div>
+        <div class="docrow">
+          <div class="docicon" style="background:#ccfbf1;color:#0d9488">${I.doc}</div>
+          <div><h4>Keputusan Rapat</h4><p>Disepakati jadwal peluncuran dilaksanakan pada 15 Desember dengan penambahan anggaran 15%.</p></div>
+        </div>
+        <div class="docrow">
+          <div class="docicon" style="background:#ffedd5;color:#ea580c">${I.shield}</div>
+          <div><h4>Rencana Tindak Lanjut</h4>
+            <div class="task"><span class="check"></span><span>Divisi Teknis — Finalisasi uji server (Jumat)</span></div>
+            <div class="task"><span class="check"></span><span>Tim Pemasaran — Rilis video teaser (Kamis)</span></div>
+          </div>
+        </div>
+        <div class="sheetfoot">
+          <span>Standar Format A4 Resmi</span>
+          <span style="color:#0d9488">✓ Ekspor PDF Instan</span>
+        </div>
+      </article>
+      <div class="floatnote">✦ Cetak & Unduh <span>.PDF</span></div>
+      <div class="audio">
+        <span class="play">${I.play}</span>
+        <div class="wave">${Array.from({length: 14}, () => '<i></i>').join('')}</div>
+      </div>
+    </div>
+  </section>
+  <section class="features">
+    <h2 class="sectiontitle">Fitur Unggulan</h2>
+    <p class="subtitle">Segala kemudahan untuk menghasilkan dokumen notulen rapat yang rapi dan dapat dipertanggungjawabkan.</p>
+    <div class="featuregrid">
+      ${features.map(f => `
+        <a class="fcard" href="#fitur/${f.key}" data-route="fitur/${f.key}">
+          ${fi(f)}
+          <h3>${f.title}</h3>
+          <p>${f.desc}</p>
+          <span class="learn">Detail fitur →</span>
+        </a>
+      `).join('')}
+    </div>
+  </section>`;
+}
+
+// Page Component: Cara Kerja
+function howView() {
+  return `
+  <section class="page">
+    <div class="pagehead">
+      <div class="eyebrow">${I.spark} PANDUAN PENGGUNAAN</div>
+      <h1>Cara Menggunakan <span class="gradient">AI Notulen</span></h1>
+      <p>3 langkah mudah untuk mengonversi transkrip atau rekaman rapat menjadi dokumen notulen resmi siap cetak.</p>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <div class="num">01</div>
+        <div class="visual">
+          <div class="vcard" style="border:2px dashed #93c5fd;background:#eff6ff">
+            <div class="vmic" style="background:#2563eb;color:#ffffff">${I.upload}</div>
+            <div style="font-size:10px;font-weight:800;color:#1d4ed8;margin-bottom:2px">Unggah File / Transkrip</div>
+            <div style="font-size:8px;color:#64748b">MP4, MP3, WAV, atau .TXT</div>
+          </div>
+        </div>
+        <small>LANGKAH 1</small>
+        <h3>Masukkan Identitas & Transkrip</h3>
+        <p>Lengkapi nama instansi, agenda, pimpinan rapat, dan notulis. Unggah file rekaman atau tempelkan catatan percakapan rapat Anda.</p>
+      </article>
+      <article class="step">
+        <div class="num">02</div>
+        <div class="visual">
+          <div class="vcard">
+            <div style="text-align:left;font-size:9px;font-weight:800;color:#334155;margin-bottom:4px">✦ Analisis Otomatis</div>
+            <div style="background:#f1f5f9;padding:6px;border-radius:6px;font-size:8px;color:#334155;text-align:left;line-height:1.4">
+              ✓ Ringkasan & Pokok Bahasan<br>✓ Keputusan & Tabel Action Items
+            </div>
+          </div>
+        </div>
+        <small>LANGKAH 2</small>
+        <h3>Susun & Edit Secara Langsung</h3>
+        <p>Klik <strong>Susun Dokumen Notulen</strong>. Tinjau lembar notulensi pada pratinjau. Anda dapat mengklik teks mana saja untuk mengeditnya secara langsung.</p>
+      </article>
+      <article class="step">
+        <div class="num">03</div>
+        <div class="visual">
+          <div class="vcard" style="border-color:#fecdd3">
+            <div style="font-weight:800;font-size:10px;color:#be123c;margin-bottom:4px">Dokumen_Notulen.pdf ✓</div>
+            <div class="vline" style="background:#e11d48;width:90%"></div>
+            <div class="vline" style="width:70%"></div>
+            <div class="vline short"></div>
+          </div>
+        </div>
+        <small>LANGKAH 3</small>
+        <h3>Unduh PDF & Simpan Riwayat</h3>
+        <p>Klik tombol merah <strong>Unduh PDF</strong> untuk langsung menyimpan file PDF standar A4 rapi ke perangkat Anda.</p>
+      </article>
+    </div>
+    <p style="text-align:center;margin-top:35px">
+      <a class="cta primary" href="#buat-notulen" data-route="buat-notulen">${I.mic} Buka Pembuat Notulen Now</a>
+    </p>
+  </section>`;
+}
+
+// Page Component: Katalog Fitur
+function featurePageView() {
+  return `
+  <section class="page">
+    <div class="pagehead">
+      <div class="eyebrow">${I.spark} KEUNGGULAN AI NOTULEN</div>
+      <h1>Semua Fitur Untuk<br><span class="gradient">Notulensi Rapat Profesional</span></h1>
+      <p>Pilih fitur di bawah untuk melihat rincian fungsinya pada aplikasi.</p>
+    </div>
+    <div class="featurepage">
+      ${features.map(f => `
+        <a class="fdetail" href="#fitur/${f.key}" data-route="fitur/${f.key}">
+          ${fi(f)}
+          <small>${f.tag}</small>
+          <h3>${f.title}</h3>
+          <p>${f.details}</p>
+          <span class="learn">Coba fitur ini →</span>
+        </a>
+      `).join('')}
+    </div>
+  </section>`;
+}
+
+// Page Component: Buat Notulen (Workspace)
+function createView() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  return `
+  <section class="page">
+    <div class="pagehead">
+      <div class="eyebrow">${I.mic} WORKSPACE NOTULEN</div>
+      <h1>Buat & Unduh <span class="gradient">Notulen PDF</span></h1>
+      <p>Isi rincian dan transkrip di panel kiri, lalu periksa, edit, dan unduh dokumen PDF rapi di panel kanan.</p>
+    </div>
+    <div class="panelgrid">
+      <!-- Panel Kiri: Form Input -->
+      <section class="panel">
+        <h2>1. Bahan & Rincian Rapat</h2>
+        <p class="muted">Lengkapi data di bawah ini agar kop dokumen notulen tersusun formal dan lengkap.</p>
+        
+        <div class="sample-bar">
+          <span>Ingin langsung menguji format?</span>
+          <button type="button" class="sample-btn" id="fill-sample">✦ Isi Contoh Transkrip</button>
+        </div>
+
+        <div class="drop" id="dropzone">
+          ${I.upload}
+          <p>Tarik & Lepas File Rekaman / Transkrip ke Sini</p>
+          <small>Mendukung MP4, MP3, WAV, M4A, WEBM, atau file teks (.TXT)</small>
+          <input id="audio" type="file" accept="audio/*,video/mp4,video/webm,video/x-matroska,.txt">
+        </div>
+        <div class="file-status" id="filestatus">
+          <span>${I.video} <span id="filename"></span></span>
+          <button class="remove-file" id="removefile" title="Hapus file">&times;</button>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="org">Instansi / Organisasi</label>
+            <input id="org" placeholder="Contoh: PT Nusantara Digital / OSIS SMA 1">
+          </div>
+          <div class="field">
+            <label for="title">Judul / Agenda Rapat *</label>
+            <input id="title" placeholder="Contoh: Rapat Evaluasi & Perencanaan Q4">
+          </div>
+        </div>
+
+        <div class="row3">
+          <div class="field">
+            <label for="mdate">Tanggal Rapat</label>
+            <input id="mdate" type="date" value="${todayStr}">
+          </div>
+          <div class="field">
+            <label for="mtime">Waktu</label>
+            <input id="mtime" placeholder="09.30 - 11.30 WIB" value="09.30 - selesai WIB">
+          </div>
+          <div class="field">
+            <label for="mloc">Tempat / Media</label>
+            <input id="mloc" placeholder="Ruang Rapat Utama / Zoom">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="leader">Pimpinan Rapat</label>
+            <input id="leader" placeholder="Nama Pimpinan Rapat">
+          </div>
+          <div class="field">
+            <label for="notulis">Notulis</label>
+            <input id="notulis" placeholder="Nama Pencatat Notulen">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="participants">Daftar Peserta Rapat</label>
+          <input id="participants" placeholder="Contoh: Budi Santoso, Rina Kartika, Dimas Pratama, Tim Pemasaran">
+        </div>
+
+        <div class="field">
+          <label for="transcript">Transkrip / Catatan Pembahasan Rapat *</label>
+          <textarea id="transcript" style="min-height:140px" placeholder="Tempelkan percakapan atau poin-poin jalannya rapat di sini...&#10;Tips: Kalimat yang mengandung kata 'disepakati', 'diputuskan', 'akan', atau nama tugas otomatis masuk ke bagian Keputusan & Action Items."></textarea>
+        </div>
+
+        <div class="keyword">
+          <div class="field" style="margin:0">
+            <label for="keywords">✦ Catatan Tambahan / Istilah Khusus (Opsional)</label>
+            <textarea id="keywords" style="min-height:60px" placeholder="Contoh: RAB = Rencana Anggaran Biaya. PIC Teknis: Sdr. Dimas."></textarea>
+          </div>
+        </div>
+
+        <button class="wide" id="generate">${I.spark} Susun Dokumen Notulen</button>
+      </section>
+
+      <!-- Panel Kanan: Live Document Preview -->
+      <section class="panel">
+        <h2>
+          <span>2. Pratinjau Dokumen Notulen</span>
+          <span id="edit-badge" style="display:none;font-size:11px;font-weight:700;color:#059669;background:#ecfdf5;padding:4px 10px;border-radius:99px">✎ Klik teks untuk edit</span>
+        </h2>
+        <p class="muted">Tampilan lembar A4 di bawah ini dapat diedit langsung dan merupakan hasil persis file PDF.</p>
+        
+        <div class="doc-preview-wrap" id="preview-wrap">
+          <div class="empty" id="empty-state">
+            ${fi({icon:'doc',color:'blue'})}
+            <strong>Belum Ada Dokumen Notulen</strong>
+            <p>Isi rincian rapat di sebelah kiri atau klik <b>"Isi Contoh Transkrip"</b>, lalu tekan <b>"Susun Dokumen Notulen"</b>.</p>
+          </div>
+          <div id="notulen-container" style="display:none"></div>
+        </div>
+
+        <div class="resultbuttons">
+          <button id="download-pdf" class="btn-pdf">${I.pdf} Unduh PDF</button>
+          <button id="copy">Salin Teks</button>
+          <button id="save">Simpan Riwayat</button>
+          <button id="print">Cetak</button>
+        </div>
+      </section>
+    </div>
+  </section>`;
+}
+
+// Page Component: Riwayat (History)
+function historyView() {
+  return `
+  <section class="page">
+    <div class="pagehead">
+      <div class="eyebrow">${I.cloud} ARSIP RAPAT</div>
+      <h1>Riwayat <span class="gradient">Notulen</span></h1>
+      <p>Daftar notulen rapat yang Anda simpan di browser ini. Anda dapat membuka atau mengunduh kembali PDF kapan saja.</p>
+    </div>
+    <section class="panel" style="max-width:920px;margin:auto">
+      ${saved.length ? saved.map((m, i) => `
+        <div style="padding:16px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:11px;font-weight:800;color:var(--b);text-transform:uppercase">${esc(m.org || 'Notulen Rapat')}</div>
+            <b style="font-size:16px;display:block;margin:2px 0;color:#0f172a">${esc(m.title)}</b>
+            <p class="muted" style="margin:0;font-size:12px">Tanggal Rapat: ${esc(m.mdateFormatted)} · Disimpan: ${esc(m.savedAt)}</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="solid" data-open="${i}">Buka & Unduh PDF</button>
+            <button class="outline" style="color:#e11d48;border-color:#fecdd3" data-del="${i}">Hapus</button>
+          </div>
+        </div>
+      `).join('') : `
+        <div class="empty">
+          ${fi({icon:'cloud',color:'blue'})}
+          <strong>Belum Ada Riwayat Notulen</strong>
+          <p>Buat notulen baru lalu klik tombol “Simpan Riwayat”.</p><br>
+          <a class="cta primary" href="#buat-notulen" data-route="buat-notulen">Buat Notulen Baru</a>
+        </div>
+      `}
+    </section>
+  </section>`;
+}
+
+// Page Component: Feature Detail Subpage
+function featureDetailView(key) {
+  let f = features.find(x => x.key === key) || features[0];
+  let dest = key === 'riwayat' ? 'riwayat' : 'buat-notulen';
+  return `
+  <section class="page">
+    <div class="pagehead">
+      ${fi(f)}
+      <div class="eyebrow">${f.tag}</div>
+      <h1>${f.title}</h1>
+      <p>${f.details}</p>
+    </div>
+    <div class="panelgrid">
+      <section class="panel">
+        <h2>Uji Coba Fitur</h2>
+        <p class="muted">Klik tombol di bawah untuk langsung menuju halaman workspace notulen rapat.</p>
+        <a class="wide" style="text-decoration:none" href="#${dest}" data-route="${dest}">Buka Workspace →</a>
+      </section>
+      <section class="panel">
+        <h2>Catatan Penggunaan</h2>
+        <p class="muted">Dokumen notulen dikemas dengan struktur formal resmi, mencakup Kop Rapat, Tabel Metadata, Ringkasan, Pokok Bahasan, Keputusan, Tabel Action Items, serta Kolom Tanda Tangan Notulis & Pimpinan Rapat.</p>
+      </section>
+    </div>
+  </section>`;
+}
+
+// Date Formatter (Indonesian Format)
+function formatIndoDate(dateStr) {
+  if (!dateStr) return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Transcript Parsing Logic: Extracts Summaries, Discussion Points, Decisions & Action Items
+function parseTranscriptToMinutes(data) {
+  const raw = data.transcript.trim();
+  const sentences = raw
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map(s => s.replace(/^[-•*]\s*/, '').trim())
+    .filter(s => s.length > 4);
+
+  // 1. Executive Summary (First 2-3 sentences)
+  const summaryLines = sentences.slice(0, Math.min(3, sentences.length));
+  const summary = summaryLines.join(' ') + (summaryLines.length && !/[.!?]$/.test(summaryLines[summaryLines.length-1]) ? '.' : '');
+
+  // 2. Decision Extraction
+  const decisionKeywords = /(disepakati|diputuskan|setuju|menyetujui|ditetapkan|keputusan|final|sepakat|resmi|mengesahkan)/i;
+  let decisions = sentences.filter(s => decisionKeywords.test(s));
+  if (decisions.length === 0 && sentences.length > 2) {
+    decisions = [sentences[Math.floor(sentences.length / 2)]];
+  } else if (decisions.length === 0) {
+    decisions = ['Seluruh peserta menyetujui poin pembahasan yang disampaikan dalam rapat.'];
+  }
+
+  // 3. Action Items Extraction
+  const actionKeywords = /(akan|tugas|tindak lanjut|pic|bertanggung jawab|menyiapkan|menyelesaikan|mengumpulkan|membuat|deadline|tenggat|sebelum|paling lambat|koordinasi|follow up)/i;
+  let actionSentences = sentences.filter(s => actionKeywords.test(s) && !decisions.includes(s));
+  if (actionSentences.length === 0) {
+    actionSentences = sentences.slice(-2);
+  }
+
+  const actions = actionSentences.slice(0, 6).map((s, idx) => {
+    let pic = 'Tim Terkait';
+    const picMatch = s.match(/(Pak|Bu|Bapak|Ibu|Sdr\.?|Sdri\.?|Divisi|Tim|Bagian|Ketua|Sekretaris|Bendahara)\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?/);
+    if (picMatch) pic = picMatch[0];
+
+    let deadline = 'Sesuai jadwal';
+    const timeMatch = s.match(/(hari\s+(?:Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)|besok|minggu\s+ini|minggu\s+depan|bulan\s+ini|tanggal\s+\d+\s+[A-Za-z]+|\d+\s+[A-Za-z]+\s+\d{4})/i);
+    if (timeMatch) deadline = timeMatch[0].charAt(0).toUpperCase() + timeMatch[0].slice(1);
+
+    return {
+      no: idx + 1,
+      task: s.endsWith('.') ? s : s + '.',
+      pic: pic,
+      deadline: deadline,
+      status: 'Dalam Proses'
+    };
+  });
+
+  // 4. Main Discussion Points
+  let discussions = sentences.filter(s => !decisions.includes(s)).slice(0, 6);
+  if (discussions.length === 0) discussions = sentences.slice(0, 5);
+
+  return {
+    ...data,
+    mdateFormatted: formatIndoDate(data.mdate),
+    summary,
+    discussions: discussions.map(d => d.endsWith('.') ? d : d + '.'),
+    decisions: decisions.map(d => d.endsWith('.') ? d : d + '.'),
+    actions
+  };
+}
+
+// Generate Printable Formal Minutes HTML Template
+function buildDocumentHTML(m) {
+  const pesertaList = m.participants
+    ? m.participants.split(/[,;\n]+/).map(p => p.trim()).filter(Boolean).join(', ')
+    : 'Seluruh Peserta Terundang';
+
+  return `
+  <div id="notulen-paper" contenteditable="true" spellcheck="false">
+    <div class="doc-header">
+      <div>
+        <div class="doc-org">${esc(m.org || 'DOKUMEN RESMI RAPAT')}</div>
+        <h1 class="doc-main-title">NOTULEN RAPAT</h1>
+        <div style="font-size:13px;font-weight:700;color:#334155;margin-top:2px">${esc(m.title)}</div>
+      </div>
+      <div class="doc-badge">DOKUMEN RESMI</div>
+    </div>
+
+    <table class="meta-table">
+      <tr>
+        <td class="meta-label">Hari / Tanggal</td>
+        <td class="meta-val">${esc(m.mdateFormatted)}</td>
+        <td class="meta-label">Pimpinan Rapat</td>
+        <td class="meta-val">${esc(m.leader || '-')}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Waktu</td>
+        <td class="meta-val">${esc(m.mtime || '-')}</td>
+        <td class="meta-label">Notulis</td>
+        <td class="meta-val">${esc(m.notulis || '-')}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Tempat / Media</td>
+        <td class="meta-val" colspan="3">${esc(m.mloc || '-')}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Peserta Rapat</td>
+        <td class="meta-val" colspan="3">${esc(pesertaList)}</td>
+      </tr>
+      ${m.fileName ? `<tr><td class="meta-label">Lampiran Berkas</td><td class="meta-val" colspan="3">${esc(m.fileName)}</td></tr>` : ''}
+    </table>
+
+    <div class="sec-block">
+      <h2 class="sec-title">I. Ringkasan Eksekutif</h2>
+      <div class="sec-body">${esc(m.summary)}</div>
+    </div>
+
+    <div class="sec-block">
+      <h2 class="sec-title">II. Pokok-Pokok Pembahasan</h2>
+      <ol class="sec-list">
+        ${m.discussions.map(item => `<li>${esc(item)}</li>`).join('')}
+      </ol>
+    </div>
+
+    <div class="sec-block">
+      <h2 class="sec-title">III. Keputusan Rapat</h2>
+      <ul class="sec-list">
+        ${m.decisions.map(item => `<li><strong>${esc(item)}</strong></li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="sec-block">
+      <h2 class="sec-title">IV. Rencana Tindak Lanjut (Action Items)</h2>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th style="width:6%;text-align:center">No</th>
+            <th style="width:46%">Uraian Tugas / Tindak Lanjut</th>
+            <th style="width:20%">Penanggung Jawab</th>
+            <th style="width:16%">Tenggat</th>
+            <th style="width:12%">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${m.actions.map(a => `
+            <tr>
+              <td style="text-align:center">${a.no}</td>
+              <td>${esc(a.task)}</td>
+              <td>${esc(a.pic)}</td>
+              <td>${esc(a.deadline)}</td>
+              <td><span class="status-pill">${esc(a.status)}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    ${m.keywords ? `
+    <div class="sec-block">
+      <h2 class="sec-title">V. Catatan & Konteks Khusus</h2>
+      <div class="sec-body" style="white-space:pre-line">${esc(m.keywords)}</div>
+    </div>` : ''}
+
+    <div class="doc-footer">
+      <div class="sign-box">
+        <div>Mengetahui,<br>Pimpinan Rapat</div>
+        <div class="sign-line">${esc(m.leader || '( .................................... )')}</div>
+      </div>
+      <div style="align-self:flex-end;font-size:10px;color:#94a3b8;text-align:center">
+        Dokumen disusun otomatis via AI Notulen
+      </div>
+      <div class="sign-box">
+        <div>Dibuat oleh,<br>Notulis</div>
+        <div class="sign-line">${esc(m.notulis || '( .................................... )')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Render generated minutes into right side preview panel
+function renderDocumentToPreview(m) {
+  currentNotulen = m;
+  const emptyEl = document.getElementById('empty-state');
+  const contEl = document.getElementById('notulen-container');
+  const badgeEl = document.getElementById('edit-badge');
+  if (!contEl) return;
+  emptyEl.style.display = 'none';
+  contEl.style.display = 'block';
+  contEl.innerHTML = buildDocumentHTML(m);
+  if (badgeEl) badgeEl.style.display = 'inline-block';
+}
+
+// SPA View Router
+function render(route) {
+  let html;
+  if (route === 'beranda') html = homeView();
+  else if (route === 'fitur') html = featurePageView();
+  else if (route === 'cara-kerja') html = howView();
+  else if (route === 'buat-notulen') html = createView();
+  else if (route === 'riwayat') html = historyView();
+  else if (route.startsWith('fitur/')) html = featureDetailView(route.split('/')[1]);
+  else html = homeView();
+
+  app.innerHTML = html;
+
+  // Bind route links
+  document.querySelectorAll('[data-route]').forEach(el => el.addEventListener('click', e => {
+    e.preventDefault();
+    location.hash = el.dataset.route;
+  }));
+
+  // Bind history view actions
+  document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => {
+    const idx = +el.dataset.open;
+    const item = saved[idx];
+    if (!item) return;
+    currentNotulen = item;
+    location.hash = 'buat-notulen';
+  }));
+
+  document.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+    const idx = +el.dataset.del;
+    saved.splice(idx, 1);
+    localStorage.setItem('ai_notulen_history', JSON.stringify(saved));
+    updateNavBadge();
+    toast('Riwayat notulen berhasil dihapus.');
+    render('riwayat');
+  }));
+
+  // Update active nav class
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle(
+    'active',
+    a.dataset.route === route || (route.startsWith('fitur/') && a.dataset.route === 'fitur')
+  ));
+
+  if (route === 'buat-notulen') {
+    bindCreateEvents();
+    if (currentNotulen) {
+      renderDocumentToPreview(currentNotulen);
+    }
+  }
+}
+
+// Workspace Event Binding (File Drag & Drop, Sample Data, PDF Export, LocalStorage)
+function bindCreateEvents() {
+  const fileInput = document.querySelector('#audio'),
+        dropzone = document.querySelector('#dropzone'),
+        statusBox = document.querySelector('#filestatus'),
+        fileNameSpan = document.querySelector('#filename'),
+        removeBtn = document.querySelector('#removefile');
+
+  function handleFile(f) {
+    if (!f) return;
+    selectedFile = f;
+    fileNameSpan.textContent = `${f.name} (${(f.size / (1024 * 1024)).toFixed(2)} MB)`;
+    statusBox.style.display = 'flex';
+
+    // Auto-read plain text files into transcript textarea
+    if (f.name.toLowerCase().endsWith('.txt') || f.type === 'text/plain') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.querySelector('#transcript').value = ev.target.result;
+        toast(`File teks "${f.name}" berhasil dimuat ke transkrip!`);
+      };
+      reader.readAsText(f);
+    } else {
+      toast(`File rekaman "${f.name}" berhasil diunggah.`);
+    }
+  }
+
+  removeBtn.addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    statusBox.style.display = 'none';
+  });
+
+  fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+  ['dragenter', 'dragover'].forEach(eName => {
+    dropzone.addEventListener(eName, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }, false);
+  });
+  ['dragleave', 'drop'].forEach(eName => {
+    dropzone.addEventListener(eName, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }, false);
+  });
+  dropzone.addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      fileInput.files = files;
+      handleFile(files[0]);
+    }
+  });
+
+  // Quick sample text population
+  document.querySelector('#fill-sample').addEventListener('click', () => {
+    document.querySelector('#org').value = 'PT Nusantara Digital';
+    document.querySelector('#title').value = 'Rapat Koordinasi Peluncuran Aplikasi v2.0 & Evaluasi Q4';
+    document.querySelector('#mtime').value = '09.30 - 11.30 WIB';
+    document.querySelector('#mloc').value = 'Ruang Rapat Utama & Zoom Meeting';
+    document.querySelector('#leader').value = 'Bapak Hendra Wijaya';
+    document.querySelector('#notulis').value = 'Sdri. Nadya Putri';
+    document.querySelector('#participants').value = 'Bapak Hendra Wijaya, Ibu Rina Kartika, Sdr. Dimas Pratama, Sdri. Nadya Putri, Tim Pemasaran';
+    document.querySelector('#transcript').value = `Rapat dibuka oleh Bapak Hendra Wijaya pada pukul 09.30 WIB untuk membahas kesiapan peluncuran aplikasi versi 2.0.
+Tim teknis melaporkan bahwa pengujian sistem utama telah mencapai 95% dan bebas dari kendala kritis.
+Ibu Rina Kartika menyampaikan bahwa materi kampanye digital dan siaran pers sudah siap dipublikasikan.
+Setelah berdiskusi mengenai kesiapan seluruh divisi, disepakati bahwa peluncuran resmi aplikasi akan dilaksanakan pada hari Senin depan.
+Diputuskan pula bahwa anggaran promosi media sosial ditambah sebesar 15% untuk dua minggu pertama peluncuran.
+Sdr. Dimas Pratama akan menyelesaikan finalisasi server produksi dan uji beban sebelum hari Jumat.
+Tim Pemasaran bertanggung jawab menyiapkan materi video teaser dan jadwal unggahan paling lambat hari Kamis.
+Sdri. Nadya Putri akan mengirimkan undangan resmi kepada mitra media pada hari Rabu.`;
+    document.querySelector('#keywords').value = 'Aplikasi v2.0 = Platform Layanan Pelanggan Terpadu.\nPIC Teknis: Sdr. Dimas Pratama.';
+    toast('Contoh data rapat dimuat! Klik "Susun Dokumen Notulen".');
+  });
+
+  // Generate minutes action
+  document.querySelector('#generate').addEventListener('click', () => {
+    const transcriptVal = document.querySelector('#transcript').value.trim();
+    const titleVal = document.querySelector('#title').value.trim();
+
+    if (!transcriptVal && !selectedFile) {
+      toast('Tempelkan transkrip percakapan atau unggah file terlebih dahulu.');
+      document.querySelector('#transcript').focus();
+      return;
+    }
+
+    const effectiveTranscript = transcriptVal ||
+      `Rapat membahas agenda "${titleVal || 'Koordinasi Tim'}" berdasarkan file rekaman ${selectedFile.name}. ` +
+      `Seluruh peserta mengevaluasi pencapaian kerja serta membahas langkah taktis penyelesaian kendala. ` +
+      `Disepakati bahwa pelaksana tugas mengumpulkan laporan akhir sebelum hari Jumat.`;
+
+    const rawData = {
+      org: document.querySelector('#org').value.trim() || 'NOTULENSI RAPAT',
+      title: titleVal || (selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : 'Rapat Koordinasi'),
+      mdate: document.querySelector('#mdate').value,
+      mtime: document.querySelector('#mtime').value.trim() || '09.30 - selesai WIB',
+      mloc: document.querySelector('#mloc').value.trim() || 'Ruang Rapat',
+      leader: document.querySelector('#leader').value.trim(),
+      notulis: document.querySelector('#notulis').value.trim(),
+      participants: document.querySelector('#participants').value.trim(),
+      transcript: effectiveTranscript,
+      keywords: document.querySelector('#keywords').value.trim(),
+      fileName: selectedFile ? selectedFile.name : ''
+    };
+
+    const structured = parseTranscriptToMinutes(rawData);
+    renderDocumentToPreview(structured);
+    toast('Dokumen notulen berhasil disusun! Anda dapat mengedit teks atau langsung unduh PDF.');
+  });
+
+  // Export PDF Action using html2pdf.js
+  document.querySelector('#download-pdf').addEventListener('click', async () => {
+    const paper = document.getElementById('notulen-paper');
+    if (!paper || !currentNotulen) {
+      toast('Susun dokumen notulen terlebih dahulu.');
+      return;
+    }
+
+    const btn = document.querySelector('#download-pdf');
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = 'Memproses PDF...';
+    btn.disabled = true;
+
+    const cleanTitle = (currentNotulen.title || 'Notulen_Rapat')
+      .replace(/[^a-zA-Z0-9\s-_]/g, '')
+      .trim()
+      .replace(/\s+/g, '_');
+    const filename = `Notulen_${cleanTitle}.pdf`;
+
+    const opt = {
+      margin:       [12, 12, 12, 12],
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    try {
+      await html2pdf().set(opt).from(paper).save();
+      toast(`Dokumen PDF "${filename}" berhasil diunduh!`);
+    } catch (err) {
+      console.error(err);
+      toast('Membuka jendela cetak alternatif...');
+      window.print();
+    } finally {
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+    }
+  });
+
+  // Copy Clean Text Action
+  document.querySelector('#copy').addEventListener('click', async () => {
+    const paper = document.getElementById('notulen-paper');
+    if (!paper) return toast('Susun notulen terlebih dahulu.');
+    try {
+      await navigator.clipboard.writeText(paper.innerText);
+      toast('Teks notulen berhasil disalin ke clipboard.');
+    } catch {
+      toast('Gagal menyalin teks.');
+    }
+  });
+
+  // Save to LocalStorage History Action
+  document.querySelector('#save').addEventListener('click', () => {
+    if (!currentNotulen) return toast('Susun notulen terlebih dahulu.');
+    const record = {
+      ...currentNotulen,
+      savedAt: new Date().toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    };
+    saved.unshift(record);
+    localStorage.setItem('ai_notulen_history', JSON.stringify(saved));
+    updateNavBadge();
+    toast('Dokumen notulen berhasil disimpan ke Riwayat.');
+  });
+
+  // Print Window Action
+  document.querySelector('#print').addEventListener('click', () => {
+    const paper = document.getElementById('notulen-paper');
+    if (!paper) return toast('Susun notulen terlebih dahulu.');
+    const w = window.open('', '_blank');
+    if (!w) return toast('Izinkan pop-up browser untuk mencetak.');
+    const styles = document.querySelector('style').innerHTML;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentNotulen.title)}</title><style>${styles} body{background:#fff;padding:0;margin:0} #notulen-paper{box-shadow:none;padding:15mm}</style></head><body>${paper.outerHTML}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
+    w.document.close();
+  });
+}
+
+// Toast Helper
+let toastTimer;
+function toast(msg) {
+  const el = document.querySelector('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// Dark Mode Toggle Listener
+document.querySelector('#theme-btn').addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+});
+
+// Initial Hash Router Listener
+window.addEventListener('hashchange', () => render(decodeURIComponent(location.hash.slice(1) || 'beranda')));
+render(decodeURIComponent(location.hash.slice(1) || 'beranda'));
+</script>
+</body>
+</html>
